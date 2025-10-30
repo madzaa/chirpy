@@ -9,6 +9,30 @@ import (
 	"net/http"
 )
 
+func NewLoginHandler(cfg *config.ApiConfig) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		decoder := json.NewDecoder(r.Body)
+		user := services.User{}
+		service := services.UserService{
+			User:    &user,
+			Queries: cfg.Queries,
+		}
+		err := decoder.Decode(&user)
+		if err != nil {
+			log.Printf("error unmarshalling JSON: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		loggedIn, err := service.Login(r.Context(), user.Email, user.Password)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			_ = utils.WriteJSON(w, err.Error())
+		} else {
+			_ = utils.WriteJSON(w, loggedIn)
+		}
+	}
+}
+
 func NewUserHandler(cfg *config.ApiConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
@@ -23,7 +47,7 @@ func NewUserHandler(cfg *config.ApiConfig) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		createUser, err := service.CreateUser(r.Context(), user.Email)
+		createUser, err := service.CreateUser(r.Context(), user.Email, user.Password)
 		if err != nil {
 			log.Printf("error creating user: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)

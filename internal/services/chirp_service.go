@@ -19,7 +19,6 @@ type Chirp struct {
 }
 
 type ChirpService struct {
-	Chirp   *Chirp
 	Queries *database.Queries
 }
 

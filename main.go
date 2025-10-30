@@ -30,6 +30,7 @@ func main() {
 	mux.HandleFunc("GET /api/chirps", handlers.GetChirpsHandler(apiConfig))
 	mux.HandleFunc("GET /api/chirps/{chirpID}", handlers.GetChirpsByID(apiConfig))
 	mux.HandleFunc("POST /api/users", handlers.NewUserHandler(apiConfig))
+	mux.HandleFunc("POST /api/login", handlers.NewLoginHandler(apiConfig))
 
 	server := http.Server{Handler: mux, Addr: ":8080"}
 	log.Fatal(server.ListenAndServe())
