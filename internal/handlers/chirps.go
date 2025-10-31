@@ -15,7 +15,7 @@ func NewChirpHandler(cfg *config.ApiConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		chirp := services.Chirp{}
-		service := services.ChirpService{Chirp: &chirp, Queries: cfg.Queries}
+		service := services.ChirpService{Queries: cfg.Queries}
 		err := decoder.Decode(&chirp)
 		createChirp, err := service.CreateChirps(r.Context(), chirp.Body, chirp.UserId)
 		if err != nil {
@@ -35,7 +35,6 @@ func NewChirpHandler(cfg *config.ApiConfig) http.HandlerFunc {
 func GetChirpsByID(cfg *config.ApiConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		service := services.ChirpService{
-			Chirp:   nil,
 			Queries: cfg.Queries,
 		}
 

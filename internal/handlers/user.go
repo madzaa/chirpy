@@ -14,7 +14,6 @@ func NewLoginHandler(cfg *config.ApiConfig) http.HandlerFunc {
 		decoder := json.NewDecoder(r.Body)
 		user := services.User{}
 		service := services.UserService{
-			User:    &user,
 			Queries: cfg.Queries,
 		}
 		err := decoder.Decode(&user)
@@ -38,7 +37,6 @@ func NewUserHandler(cfg *config.ApiConfig) http.HandlerFunc {
 		decoder := json.NewDecoder(r.Body)
 		user := services.User{}
 		service := services.UserService{
-			User:    &user,
 			Queries: cfg.Queries,
 		}
 		err := decoder.Decode(&user)
