@@ -14,7 +14,8 @@ func NewLoginHandler(cfg *config.ApiConfig) http.HandlerFunc {
 		decoder := json.NewDecoder(r.Body)
 		user := services.User{}
 		service := services.UserService{
-			Queries: cfg.Queries,
+			Queries:     cfg.Queries,
+			TokenSecret: cfg.JWTSecret,
 		}
 		err := decoder.Decode(&user)
 		if err != nil {
@@ -22,7 +23,7 @@ func NewLoginHandler(cfg *config.ApiConfig) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		loggedIn, err := service.Login(r.Context(), user.Email, user.Password)
+		loggedIn, err := service.Login(r.Context(), user.Email, user.Password, user.ExpiresIn)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = utils.WriteJSON(w, err.Error())
@@ -37,7 +38,8 @@ func NewUserHandler(cfg *config.ApiConfig) http.HandlerFunc {
 		decoder := json.NewDecoder(r.Body)
 		user := services.User{}
 		service := services.UserService{
-			Queries: cfg.Queries,
+			Queries:     cfg.Queries,
+			TokenSecret: cfg.JWTSecret,
 		}
 		err := decoder.Decode(&user)
 		if err != nil {

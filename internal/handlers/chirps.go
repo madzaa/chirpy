@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"chirpy/internal/config"
+	"chirpy/internal/middleware"
 	"chirpy/internal/services"
 	"chirpy/internal/utils"
 	"encoding/json"
@@ -17,7 +18,15 @@ func NewChirpHandler(cfg *config.ApiConfig) http.HandlerFunc {
 		chirp := services.Chirp{}
 		service := services.ChirpService{Queries: cfg.Queries}
 		err := decoder.Decode(&chirp)
-		createChirp, err := service.CreateChirps(r.Context(), chirp.Body, chirp.UserId)
+		if err != nil {
+			return
+		}
+		userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
+		if !ok {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		createChirp, err := service.CreateChirps(r.Context(), chirp.Body, userID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Printf("unable to create new chirp: %v", err)

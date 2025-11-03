@@ -12,15 +12,18 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
-	Password  string    `json:"-"`
+	ID        uuid.UUID     `json:"id"`
+	CreatedAt time.Time     `json:"created_at"`
+	UpdatedAt time.Time     `json:"updated_at"`
+	Email     string        `json:"email"`
+	Password  string        `json:"-"`
+	ExpiresIn time.Duration `json:"expires_in_seconds,omitempty"`
+	Token     string        `json:"token"`
 }
 
 type UserService struct {
-	Queries *database.Queries
+	Queries     *database.Queries
+	TokenSecret string
 }
 
 func (u *UserService) CreateUser(ctx context.Context, email, password string) (User, error) {
@@ -53,8 +56,20 @@ func (u *UserService) GetUser(ctx context.Context, email, password string) (User
 	return mapToUser(getUser), nil
 }
 
-func (u *UserService) Login(ctx context.Context, email, password string) (User, error) {
-	return u.GetUser(ctx, email, password)
+func (u *UserService) Login(ctx context.Context, email, password string, expiresIn time.Duration) (User, error) {
+	user, err := u.GetUser(ctx, email, password)
+	if err != nil {
+		return User{}, err
+	}
+	if expiresIn == 0 {
+		expiresIn = 60 * time.Minute
+	}
+	jwt, err := auth.MakeJWT(user.ID, u.TokenSecret, expiresIn)
+	if err != nil {
+		return User{}, err
+	}
+	user.Token = jwt
+	return user, nil
 }
 
 func mapToUser(createUser database.User) User {

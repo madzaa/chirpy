@@ -26,7 +26,7 @@ func main() {
 	mux.HandleFunc("GET /admin/metrics", handlers.NewMetricsHandler(apiConfig))
 	mux.HandleFunc("POST /admin/reset", handlers.NewResetHandler(apiConfig))
 	mux.HandleFunc("GET /api/healthz", handlers.NewHealthHandler)
-	mux.HandleFunc("POST /api/chirps", handlers.NewChirpHandler(apiConfig))
+	mux.Handle("POST /api/chirps", middleware.CheckAuthToken(apiConfig, handlers.NewChirpHandler(apiConfig)))
 	mux.HandleFunc("GET /api/chirps", handlers.GetChirpsHandler(apiConfig))
 	mux.HandleFunc("GET /api/chirps/{chirpID}", handlers.GetChirpsByID(apiConfig))
 	mux.HandleFunc("POST /api/users", handlers.NewUserHandler(apiConfig))
