@@ -88,3 +88,7 @@ func GetBearerToken(header http.Header) (string, error) {
 
 	return token, nil
 }
+
+func MakeRefreshToken() (string, error) {
+
+}
