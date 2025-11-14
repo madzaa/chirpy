@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"net/http"
 	"runtime"
@@ -35,9 +37,9 @@ func CheckPasswordHash(password, hash string) (bool, error) {
 	return valid, nil
 }
 
-func MakeJWT(userId uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
+func MakeJWT(userId uuid.UUID, tokenSecret string) (string, error) {
 	now := jwt.NewNumericDate(time.Now().UTC())
-	exp := jwt.NewNumericDate(time.Now().Add(expiresIn).UTC())
+	exp := jwt.NewNumericDate(time.Now().Add(60 * time.Minute).UTC())
 
 	claims := jwt.RegisteredClaims{
 		Issuer:    "chirpy",
@@ -55,7 +57,7 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	claim := jwt.RegisteredClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, &claim, func(token *jwt.Token) (any, error) {
 		return []byte(tokenSecret), nil
-	}, jwt.WithLeeway(5*time.Second))
+	}, jwt.WithLeeway(5*time.Second), jwt.WithValidMethods([]string{"HS256"}))
 	if err != nil {
 		return [16]byte{}, err
 	}
@@ -90,5 +92,11 @@ func GetBearerToken(header http.Header) (string, error) {
 }
 
 func MakeRefreshToken() (string, error) {
-
+	key := make([]byte, 32)
+	_, err := rand.Read(key)
+	if err != nil {
+		return "", err
+	}
+	xcode := hex.EncodeToString(key)
+	return xcode, nil
 }

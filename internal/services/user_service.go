@@ -12,13 +12,13 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID     `json:"id"`
-	CreatedAt time.Time     `json:"created_at"`
-	UpdatedAt time.Time     `json:"updated_at"`
-	Email     string        `json:"email"`
-	Password  string        `json:"-"`
-	ExpiresIn time.Duration `json:"expires_in_seconds,omitempty"`
-	Token     string        `json:"token"`
+	ID           uuid.UUID `json:"id"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Email        string    `json:"email"`
+	Password     string    `json:"-"`
+	Token        string    `json:"token"`
+	RefreshToken string    `json:"refresh_token"`
 }
 
 type UserService struct {
@@ -27,7 +27,10 @@ type UserService struct {
 }
 
 func (u *UserService) CreateUser(ctx context.Context, email, password string) (User, error) {
-	hash, _ := auth.HashPassword(password)
+	hash, err := auth.HashPassword(password)
+	if err != nil {
+		return User{}, err
+	}
 	createUser, err := u.Queries.CreateUser(ctx, database.CreateUserParams{
 		Email: email,
 		HashPassword: sql.NullString{
@@ -56,20 +59,71 @@ func (u *UserService) GetUser(ctx context.Context, email, password string) (User
 	return mapToUser(getUser), nil
 }
 
-func (u *UserService) Login(ctx context.Context, email, password string, expiresIn time.Duration) (User, error) {
+func (u *UserService) Login(ctx context.Context, email, password string) (User, error) {
 	user, err := u.GetUser(ctx, email, password)
 	if err != nil {
 		return User{}, err
 	}
-	if expiresIn == 0 {
-		expiresIn = 60 * time.Minute
-	}
-	jwt, err := auth.MakeJWT(user.ID, u.TokenSecret, expiresIn)
+
+	jwt, err := auth.MakeJWT(user.ID, u.TokenSecret)
 	if err != nil {
 		return User{}, err
 	}
+
 	user.Token = jwt
+	token, err := auth.MakeRefreshToken()
+	if err != nil {
+		return User{}, err
+	}
+	refreshToken, err := u.Queries.CreateRefreshToken(ctx, database.CreateRefreshTokenParams{
+		Token:  token,
+		UserID: user.ID,
+		ExpiresAt: sql.NullTime{
+			Time: time.Now().Add(60 * 24 * time.Hour), Valid: true,
+		},
+		RevokedAt: sql.NullTime{
+			Valid: false,
+		},
+	})
+	if err != nil {
+		return User{}, err
+	}
+
+	user.RefreshToken = refreshToken.Token
 	return user, nil
+}
+
+func (u *UserService) Refresh(ctx context.Context, token string) (string, error) {
+	tokenUser, err := u.Queries.GetUserFromRefreshToken(ctx, token)
+	if err != nil {
+		return "", err
+	}
+
+	user := User{
+		ID:        tokenUser.ID,
+		CreatedAt: tokenUser.CreatedAt,
+		UpdatedAt: tokenUser.UpdatedAt,
+		Email:     tokenUser.Email,
+	}
+	jwt, err := auth.MakeJWT(user.ID, u.TokenSecret)
+	if err != nil {
+		return "", err
+	}
+	return jwt, nil
+}
+
+func (u *UserService) Revoke(ctx context.Context, token string) error {
+	err := u.Queries.RevokeRefreshToken(ctx, database.RevokeRefreshTokenParams{
+		RevokedAt: sql.NullTime{
+			Time:  time.Now(),
+			Valid: true,
+		},
+		Token: token,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func mapToUser(createUser database.User) User {

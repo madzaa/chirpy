@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"chirpy/internal/config"
 	"chirpy/internal/middleware"
 	"chirpy/internal/services"
 	"chirpy/internal/utils"
@@ -12,11 +11,10 @@ import (
 	"github.com/google/uuid"
 )
 
-func NewChirpHandler(cfg *config.ApiConfig) http.HandlerFunc {
+func NewChirpHandler(cfg *services.ChirpService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		chirp := services.Chirp{}
-		service := services.ChirpService{Queries: cfg.Queries}
 		err := decoder.Decode(&chirp)
 		if err != nil {
 			return
@@ -26,7 +24,7 @@ func NewChirpHandler(cfg *config.ApiConfig) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		createChirp, err := service.CreateChirps(r.Context(), chirp.Body, userID)
+		createChirp, err := cfg.CreateChirps(r.Context(), chirp.Body, userID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Printf("unable to create new chirp: %v", err)
@@ -41,11 +39,8 @@ func NewChirpHandler(cfg *config.ApiConfig) http.HandlerFunc {
 		}
 	}
 }
-func GetChirpsByID(cfg *config.ApiConfig) http.HandlerFunc {
+func GetChirpsByID(cfg *services.ChirpService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		service := services.ChirpService{
-			Queries: cfg.Queries,
-		}
 
 		id, err := uuid.Parse(r.PathValue("chirpID"))
 		if err != nil {
@@ -54,7 +49,7 @@ func GetChirpsByID(cfg *config.ApiConfig) http.HandlerFunc {
 			return
 		}
 
-		chirp, err := service.GetChirpId(r.Context(), id)
+		chirp, err := cfg.GetChirpId(r.Context(), id)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -68,10 +63,9 @@ func GetChirpsByID(cfg *config.ApiConfig) http.HandlerFunc {
 	}
 }
 
-func GetChirpsHandler(cfg *config.ApiConfig) http.HandlerFunc {
+func GetChirpsHandler(cfg *services.ChirpService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		service := services.ChirpService{Queries: cfg.Queries}
-		chirps, err := service.GetChirps(r.Context())
+		chirps, err := cfg.GetChirps(r.Context())
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Printf("unable to get chirps %v", err)

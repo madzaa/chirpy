@@ -1,10 +1,10 @@
 package auth
 
 import (
+	"encoding/hex"
 	"net/http"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -46,7 +46,7 @@ func TestValidateJWT(t *testing.T) {
 	if err != nil {
 		return
 	}
-	getJwt, err := MakeJWT(id, "i am the one who tests", 5*time.Minute)
+	getJwt, err := MakeJWT(id, "i am the one who tests")
 	if err != nil {
 		return
 	}
@@ -143,5 +143,35 @@ func TestGetBearerToken(t *testing.T) {
 				t.Errorf("GetBearerToken() got = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestMakeRefreshToken(t *testing.T) {
+	// The function returns a non-empty string.
+	//The string is 64 hex characters (since 32 bytes * 2).
+	//The string is valid hex.
+	//No error is returned.
+	// dst := make([]byte, hex.DecodedLen(len(src)))
+	//n, err := hex.Decode(dst, src)
+	//if err != nil {
+	//log.Fatal(err)
+
+	token, err := MakeRefreshToken()
+
+	if err != nil {
+		t.Errorf("can't make refresh token %v", err)
+		return
+	}
+
+	dst := make([]byte, hex.DecodedLen(len(token)))
+	_, err = hex.Decode(dst, []byte(token))
+	if err != nil {
+		t.Errorf("can't  decode token %v", err)
+		return
+	}
+
+	if len(token) != 64 {
+		t.Errorf("string is not 64 hex character, it's %v", len(token))
+		return
 	}
 }

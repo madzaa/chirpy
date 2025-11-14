@@ -1,22 +1,26 @@
--- name: CreateChirps :one
+-- name: CreateRefreshToken :one
 INSERT INTO refresh_tokens(token, created_at, updated_at, user_id, expires_at, revoked_at)
-VALUES ($,
+VALUES ($1,
         now(),
         now(),
-        $1,
-        $2)
+        $2,
+        $3,
+        $4)
 RETURNING *;
 
--- name: GetChirps :many
-SELECT *
-FROM chirps
-ORDER BY created_at;
+-- name: GetUserFromRefreshToken :one
+SELECT u.*
+FROM users u
+         INNER JOIN refresh_tokens rt
+                    ON u.id = rt.user_id
+WHERE rt.token = $1
+  AND rt.expires_at > now()
+  AND rt.revoked_at IS NULL;
 
--- name: GetChirp :one
-SELECT *
-FROM chirps
-WHERE id = $1;
+-- name: RevokeRefreshToken :exec
+UPDATE refresh_tokens
+SET revoked_at = $1,
+    updated_at = $1
+WHERE token = $2;
 
--- name: DeleteChirps :exec
-delete
-from chirps;
+
