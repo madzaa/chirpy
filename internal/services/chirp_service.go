@@ -22,7 +22,7 @@ type ChirpService struct {
 	Queries *database.Queries
 }
 
-func (s *ChirpService) CreateChirps(ctx context.Context, body string, userID uuid.UUID) (Chirp, error) {
+func (s *ChirpService) Create(ctx context.Context, body string, userID uuid.UUID) (Chirp, error) {
 	if len(body) > 140 {
 		return Chirp{}, fmt.Errorf("chirp too long")
 	}
@@ -51,7 +51,7 @@ func (s *ChirpService) GetChirps(ctx context.Context) ([]Chirp, error) {
 	return responseChirps, nil
 }
 
-func (s *ChirpService) GetChirpId(ctx context.Context, id uuid.UUID) (Chirp, error) {
+func (s *ChirpService) GetId(ctx context.Context, id uuid.UUID) (Chirp, error) {
 	chirps, err := s.Queries.GetChirp(ctx, id)
 	if err != nil {
 		return Chirp{}, err

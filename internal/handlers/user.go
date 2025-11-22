@@ -39,23 +39,27 @@ func NewUserHandler(cfg *services.UserService) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		createUser, err := cfg.CreateUser(r.Context(), user.Email, user.Password)
-		if err != nil {
-			log.Printf("error creating user: %s", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		switch r.Method {
+		case "POST":
+			create, err := cfg.Create(r.Context(), user.Email, user.Password)
+			if err != nil {
+				log.Printf("error creating user: %s", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 
-		w.WriteHeader(http.StatusCreated)
-		err = utils.WriteJSON(w, createUser)
-		if err != nil {
-			log.Printf("error marshaling response: %s", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			w.WriteHeader(http.StatusCreated)
+			err = utils.WriteJSON(w, create)
+			if err != nil {
+				log.Printf("error marshaling response: %s", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		case "PUT":
+			update, err := cfg.Update(r.context, user.Email, user.Password)
 		}
 	}
 }
-
 func NewRefreshHandler(cfg *services.UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		refreshToken, err := auth.GetBearerToken(r.Header)

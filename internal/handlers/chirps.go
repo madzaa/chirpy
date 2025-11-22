@@ -24,7 +24,7 @@ func NewChirpHandler(cfg *services.ChirpService) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		createChirp, err := cfg.CreateChirps(r.Context(), chirp.Body, userID)
+		createChirp, err := cfg.Create(r.Context(), chirp.Body, userID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Printf("unable to create new chirp: %v", err)
@@ -49,7 +49,7 @@ func GetChirpsByID(cfg *services.ChirpService) http.HandlerFunc {
 			return
 		}
 
-		chirp, err := cfg.GetChirpId(r.Context(), id)
+		chirp, err := cfg.GetId(r.Context(), id)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			return

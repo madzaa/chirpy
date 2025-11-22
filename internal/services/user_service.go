@@ -3,6 +3,7 @@ package services
 import (
 	"chirpy/internal/auth"
 	"chirpy/internal/database"
+	"chirpy/internal/middleware"
 	"context"
 	"database/sql"
 	"errors"
@@ -26,7 +27,31 @@ type UserService struct {
 	TokenSecret string
 }
 
-func (u *UserService) CreateUser(ctx context.Context, email, password string) (User, error) {
+func (u *UserService) Update(ctx context.Context, email, password string) error {
+	hash, err := auth.HashPassword(password)
+	if err != nil {
+		return err
+	}
+	_, err = u.Queries.GetUser(ctx, email)
+	if err != nil {
+		return err
+	}
+
+	uid := ctx.Value(middleware.UserIDKey).(uuid.UUID)
+	err = u.Queries.UpdateUsers(ctx, database.UpdateUsersParams{
+		Email: email,
+		HashPassword: sql.NullString{
+			String: hash,
+			Valid:  true,
+		},
+		ID: uid,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (u *UserService) Create(ctx context.Context, email, password string) (User, error) {
 	hash, err := auth.HashPassword(password)
 	if err != nil {
 		return User{}, err
@@ -43,7 +68,7 @@ func (u *UserService) CreateUser(ctx context.Context, email, password string) (U
 	return mapToUser(createUser), nil
 }
 
-func (u *UserService) GetUser(ctx context.Context, email, password string) (User, error) {
+func (u *UserService) Get(ctx context.Context, email, password string) (User, error) {
 
 	getUser, err := u.Queries.GetUser(ctx, email)
 	if err != nil {
@@ -60,7 +85,7 @@ func (u *UserService) GetUser(ctx context.Context, email, password string) (User
 }
 
 func (u *UserService) Login(ctx context.Context, email, password string) (User, error) {
-	user, err := u.GetUser(ctx, email, password)
+	user, err := u.Get(ctx, email, password)
 	if err != nil {
 		return User{}, err
 	}
