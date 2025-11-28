@@ -45,7 +45,7 @@ func main() {
 
 	// users
 	mux.HandleFunc("POST /api/users", handlers.NewUserHandler(userService))
-	mux.HandleFunc("PUT /api/users", handlers.NewUserHandler(userService))
+	mux.Handle("PUT /api/users", middleware.CheckAuthToken(apiConfig, handlers.NewUserHandler(userService)))
 	mux.HandleFunc("POST /api/login", handlers.NewLoginHandler(userService))
 	mux.HandleFunc("POST /api/refresh", handlers.NewRefreshHandler(userService))
 	mux.HandleFunc("POST /api/revoke", handlers.NewRevokeHandler(userService))

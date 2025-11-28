@@ -7,6 +7,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,7 +18,7 @@ type User struct {
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 	Email        string    `json:"email"`
-	Password     string    `json:"-"`
+	Password     string    `json:"password,omitempty"`
 	Token        string    `json:"token"`
 	RefreshToken string    `json:"refresh_token"`
 }
@@ -27,17 +28,30 @@ type UserService struct {
 	TokenSecret string
 }
 
-func (u *UserService) Update(ctx context.Context, email, password string) error {
-	hash, err := auth.HashPassword(password)
-	if err != nil {
-		return err
-	}
-	_, err = u.Queries.GetUser(ctx, email)
-	if err != nil {
-		return err
+func (u *UserService) Update(ctx context.Context, email, password string) (User, error) {
+	uid, ok := ctx.Value(middleware.UserIDKey).(uuid.UUID)
+	val := ctx.Value(middleware.UserIDKey)
+	fmt.Printf("Context value: %+v, Type: %T\n", val, val)
+
+	if !ok {
+		return User{}, fmt.Errorf("id not found")
 	}
 
-	uid := ctx.Value(middleware.UserIDKey).(uuid.UUID)
+	_, err := u.Queries.GetUserById(ctx, uid)
+	if err != nil {
+		return User{}, fmt.Errorf("user not found: %v", err)
+	}
+
+	_, err = u.Queries.GetUser(ctx, email)
+	if err == nil {
+		return User{}, fmt.Errorf("user exists: %v", err)
+	}
+
+	hash, err := auth.HashPassword(password)
+	if err != nil {
+		return User{}, err
+	}
+
 	err = u.Queries.UpdateUsers(ctx, database.UpdateUsersParams{
 		Email: email,
 		HashPassword: sql.NullString{
@@ -47,9 +61,14 @@ func (u *UserService) Update(ctx context.Context, email, password string) error 
 		ID: uid,
 	})
 	if err != nil {
-		return err
+		return User{}, err
 	}
-	return nil
+	gotUser, err := u.Queries.GetUser(ctx, email)
+	if err != nil {
+		return User{}, err
+	}
+	user := mapToUser(gotUser)
+	return user, nil
 }
 func (u *UserService) Create(ctx context.Context, email, password string) (User, error) {
 	hash, err := auth.HashPassword(password)

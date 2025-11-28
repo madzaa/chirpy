@@ -56,7 +56,19 @@ func NewUserHandler(cfg *services.UserService) http.HandlerFunc {
 				return
 			}
 		case "PUT":
-			update, err := cfg.Update(r.context, user.Email, user.Password)
+			update, err := cfg.Update(r.Context(), user.Email, user.Password)
+			if err != nil {
+				log.Printf("error updating user: %s", err)
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			err = utils.WriteJSON(w, update)
+			if err != nil {
+				log.Printf("error marshaling response: %s", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 		}
 	}
 }

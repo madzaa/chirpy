@@ -11,11 +11,18 @@ SELECT *
 FROM users
 where email = $1;
 
+-- name: GetUserById :one
+SELECT *
+FROM users
+where id = $1;
+
 -- name: DeleteUsers :exec
 DELETE
 FROM users;
 
 -- name: UpdateUsers :exec
 UPDATE users
-SET email = $1 and hash_password = $2
+SET email         = $1,
+    hash_password = $2,
+    updated_at    = now()
 WHERE id = $3;
