@@ -2,7 +2,10 @@ package services
 
 import (
 	"chirpy/internal/database"
+	"chirpy/internal/middleware"
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -57,6 +60,27 @@ func (s *ChirpService) GetId(ctx context.Context, id uuid.UUID) (Chirp, error) {
 		return Chirp{}, err
 	}
 	return mapToChirp(chirps), nil
+}
+
+func (s *ChirpService) DeleteChirp(ctx context.Context, id uuid.UUID) error {
+	userId, ok := ctx.Value(middleware.UserIDKey).(uuid.UUID)
+	if !ok || userId == uuid.Nil {
+		return ErrUnauthorized
+	}
+
+	_, err := s.Queries.DeleteUserChirpById(ctx,
+		database.DeleteUserChirpByIdParams{
+			ID:     id,
+			UserID: userId,
+		})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrUnauthorized
+		}
+		return err
+	}
+
+	return nil
 }
 
 func mapToChirp(createChirp database.Chirp) Chirp {

@@ -36,6 +36,7 @@ func main() {
 	// chirps
 	mux.HandleFunc("GET /api/chirps", handlers.GetChirpsHandler(chirpService))
 	mux.HandleFunc("GET /api/chirps/{chirpID}", handlers.GetChirpsByID(chirpService))
+	mux.Handle("DELETE /api/chirps/{chirpID}", middleware.CheckAuthToken(apiConfig, handlers.DeleteChirpByID(chirpService)))
 	mux.Handle("POST /api/chirps", middleware.CheckAuthToken(apiConfig, handlers.NewChirpHandler(chirpService)))
 
 	// admin

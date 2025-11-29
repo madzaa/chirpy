@@ -30,8 +30,6 @@ type UserService struct {
 
 func (u *UserService) Update(ctx context.Context, email, password string) (User, error) {
 	uid, ok := ctx.Value(middleware.UserIDKey).(uuid.UUID)
-	val := ctx.Value(middleware.UserIDKey)
-	fmt.Printf("Context value: %+v, Type: %T\n", val, val)
 
 	if !ok {
 		return User{}, fmt.Errorf("id not found")

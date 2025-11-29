@@ -5,6 +5,7 @@ import (
 	"chirpy/internal/services"
 	"chirpy/internal/utils"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
@@ -41,7 +42,6 @@ func NewChirpHandler(cfg *services.ChirpService) http.HandlerFunc {
 }
 func GetChirpsByID(cfg *services.ChirpService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		id, err := uuid.Parse(r.PathValue("chirpID"))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -60,6 +60,27 @@ func GetChirpsByID(cfg *services.ChirpService) http.HandlerFunc {
 			log.Printf("unable to marshal response %v", err)
 			return
 		}
+	}
+}
+
+func DeleteChirpByID(cfg *services.ChirpService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := uuid.Parse(r.PathValue("chirpID"))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			log.Printf("unable to parse chirpID: %v", err)
+			return
+		}
+		err = cfg.DeleteChirp(r.Context(), id)
+		if err != nil {
+			if errors.Is(err, services.ErrUnauthorized) {
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
