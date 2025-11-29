@@ -72,6 +72,7 @@ func NewUserHandler(cfg *services.UserService) http.HandlerFunc {
 		}
 	}
 }
+
 func NewRefreshHandler(cfg *services.UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		refreshToken, err := auth.GetBearerToken(r.Header)
