@@ -18,7 +18,7 @@ VALUES (gen_random_uuid(),
         now(),
         now(),
         $1, $2)
-RETURNING id, created_at, updated_at, email, hash_password
+RETURNING id, created_at, updated_at, email, hash_password, is_chirpy_red
 `
 
 type CreateUserParams struct {
@@ -35,6 +35,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.UpdatedAt,
 		&i.Email,
 		&i.HashPassword,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
@@ -50,7 +51,7 @@ func (q *Queries) DeleteUsers(ctx context.Context) error {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, created_at, updated_at, email, hash_password
+SELECT id, created_at, updated_at, email, hash_password, is_chirpy_red
 FROM users
 where email = $1
 `
@@ -64,12 +65,13 @@ func (q *Queries) GetUser(ctx context.Context, email string) (User, error) {
 		&i.UpdatedAt,
 		&i.Email,
 		&i.HashPassword,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, created_at, updated_at, email, hash_password
+SELECT id, created_at, updated_at, email, hash_password, is_chirpy_red
 FROM users
 where id = $1
 `
@@ -83,6 +85,7 @@ func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.UpdatedAt,
 		&i.Email,
 		&i.HashPassword,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
@@ -103,5 +106,17 @@ type UpdateUsersParams struct {
 
 func (q *Queries) UpdateUsers(ctx context.Context, arg UpdateUsersParams) error {
 	_, err := q.db.ExecContext(ctx, updateUsers, arg.Email, arg.HashPassword, arg.ID)
+	return err
+}
+
+const upgradeToRed = `-- name: UpgradeToRed :exec
+UPDATE users
+SET is_chirpy_red = TRUE,
+    updated_at    = now()
+WHERE id = $1
+`
+
+func (q *Queries) UpgradeToRed(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, upgradeToRed, id)
 	return err
 }

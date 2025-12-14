@@ -50,6 +50,7 @@ func main() {
 	mux.HandleFunc("POST /api/login", handlers.NewLoginHandler(userService))
 	mux.HandleFunc("POST /api/refresh", handlers.NewRefreshHandler(userService))
 	mux.HandleFunc("POST /api/revoke", handlers.NewRevokeHandler(userService))
+	mux.HandleFunc("POST /api/polka/webhooks", handlers.UpgradeUserHandler(userService))
 
 	server := http.Server{Handler: mux, Addr: ":8080"}
 	log.Fatal(server.ListenAndServe())

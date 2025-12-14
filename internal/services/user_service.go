@@ -21,6 +21,7 @@ type User struct {
 	Password     string    `json:"password,omitempty"`
 	Token        string    `json:"token"`
 	RefreshToken string    `json:"refresh_token"`
+	IsChirpyRed  bool      `json:"is_chirpy_red"`
 }
 
 type UserService struct {
@@ -68,6 +69,7 @@ func (u *UserService) Update(ctx context.Context, email, password string) (User,
 	user := mapToUser(gotUser)
 	return user, nil
 }
+
 func (u *UserService) Create(ctx context.Context, email, password string) (User, error) {
 	hash, err := auth.HashPassword(password)
 	if err != nil {
@@ -141,12 +143,7 @@ func (u *UserService) Refresh(ctx context.Context, token string) (string, error)
 		return "", err
 	}
 
-	user := User{
-		ID:        tokenUser.ID,
-		CreatedAt: tokenUser.CreatedAt,
-		UpdatedAt: tokenUser.UpdatedAt,
-		Email:     tokenUser.Email,
-	}
+	user := mapToUser(tokenUser)
 	jwt, err := auth.MakeJWT(user.ID, u.TokenSecret)
 	if err != nil {
 		return "", err
@@ -168,12 +165,32 @@ func (u *UserService) Revoke(ctx context.Context, token string) error {
 	return nil
 }
 
+func (u *UserService) Upgrade(ctx context.Context, userId, event string) error {
+	if event != "user.upgraded" {
+		return errors.New("invalid event")
+	}
+	id, err := uuid.Parse(userId)
+	if err != nil {
+		return err
+	}
+	_, err = u.Queries.GetUserById(ctx, id)
+	if err != nil {
+		return ErrUserNotFound
+	}
+
+	err = u.Queries.UpgradeToRed(ctx, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func mapToUser(createUser database.User) User {
 	responseUser := User{
-		ID:        createUser.ID,
-		CreatedAt: createUser.CreatedAt,
-		UpdatedAt: createUser.UpdatedAt,
-		Email:     createUser.Email,
+		ID:          createUser.ID,
+		CreatedAt:   createUser.CreatedAt,
+		UpdatedAt:   createUser.UpdatedAt,
+		Email:       createUser.Email,
+		IsChirpyRed: createUser.IsChirpyRed,
 	}
 	return responseUser
 }

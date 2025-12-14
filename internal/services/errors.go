@@ -2,4 +2,5 @@ package services
 
 import "errors"
 
-var ErrUnauthorized error = errors.New("user not authorized")
+var ErrUnauthorized = errors.New("user not authorized")
+var ErrUserNotFound = errors.New("user not found")

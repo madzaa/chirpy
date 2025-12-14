@@ -5,6 +5,7 @@ import (
 	"chirpy/internal/services"
 	"chirpy/internal/utils"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 )
@@ -109,6 +110,31 @@ func NewRevokeHandler(cfg *services.UserService) http.HandlerFunc {
 		if err != nil {
 			log.Printf("unable to revoke token: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func UpgradeUserHandler(cfg *services.UserService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		decoder := json.NewDecoder(r.Body)
+		webhook := services.PolkaWebhook{}
+		err := decoder.Decode(&webhook)
+		if err != nil {
+			log.Printf("error unmarshalling JSON: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		err = cfg.Upgrade(r.Context(), webhook.Data.UserID, webhook.Event)
+		if err != nil {
+			if errors.Is(err, services.ErrUserNotFound) {
+				log.Printf("error upgrading to chirpy red: %s", err)
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			log.Printf("error upgrading to chirpy red: %s", err)
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)
