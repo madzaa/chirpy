@@ -126,6 +126,12 @@ func UpgradeUserHandler(cfg *services.UserService) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		apiKey, err := auth.GetPolkaApiKey(r.Header)
+		if err != nil || apiKey != cfg.APIKey {
+			log.Printf("invalid api key: %s", err)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 		err = cfg.Upgrade(r.Context(), webhook.Data.UserID, webhook.Event)
 		if err != nil {
 			if errors.Is(err, services.ErrUserNotFound) {

@@ -9,19 +9,23 @@ import (
 )
 
 type ApiConfig struct {
-	Hits      atomic.Int32
-	Queries   *database.Queries
-	Env       string
-	JWTSecret string
+	Hits        atomic.Int32
+	Queries     *database.Queries
+	Env         string
+	JWTSecret   string
+	PolkaAPIKey string
 }
 
 func NewApiConfig() *ApiConfig {
 	env := os.Getenv("PLATFORM")
 	dbURL := os.Getenv("DB_URL")
+	polkaApiKey := os.Getenv("POLKA_KEY")
+	if polkaApiKey == "" {
+		log.Fatal("api key is missing")
+	}
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatal("jwt secret is missing")
-
 	}
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
@@ -29,5 +33,5 @@ func NewApiConfig() *ApiConfig {
 	}
 
 	dbQueries := database.New(db)
-	return &ApiConfig{Queries: dbQueries, Env: env, JWTSecret: jwtSecret}
+	return &ApiConfig{Queries: dbQueries, Env: env, JWTSecret: jwtSecret, PolkaAPIKey: polkaApiKey}
 }

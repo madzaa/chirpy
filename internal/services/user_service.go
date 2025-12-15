@@ -27,6 +27,7 @@ type User struct {
 type UserService struct {
 	Queries     *database.Queries
 	TokenSecret string
+	APIKey      string
 }
 
 func (u *UserService) Update(ctx context.Context, email, password string) (User, error) {

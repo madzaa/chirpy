@@ -72,23 +72,31 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	return id, nil
 }
 
-func GetBearerToken(header http.Header) (string, error) {
+func getAuthToken(header http.Header, prefix string) (string, error) {
 	authHeader := header.Get("Authorization")
 
 	if authHeader == "" {
 		return "", errors.New("authorization header not found")
 	}
 
-	token, found := strings.CutPrefix(authHeader, "Bearer ")
+	token, found := strings.CutPrefix(authHeader, prefix)
 	if !found {
-		return "", errors.New("authorization header must start with 'Bearer '")
+		return "", errors.New("authorization header must start with '" + prefix + "'")
 	}
 
 	if token == "" {
-		return "", errors.New("bearer token is empty")
+		return "", errors.New("token is empty")
 	}
 
 	return token, nil
+}
+
+func GetBearerToken(header http.Header) (string, error) {
+	return getAuthToken(header, "Bearer ")
+}
+
+func GetPolkaApiKey(header http.Header) (string, error) {
+	return getAuthToken(header, "APIKey ")
 }
 
 func MakeRefreshToken() (string, error) {

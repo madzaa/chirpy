@@ -21,6 +21,7 @@ func main() {
 	userService := &services.UserService{
 		Queries:     apiConfig.Queries,
 		TokenSecret: apiConfig.JWTSecret,
+		APIKey:      apiConfig.PolkaAPIKey,
 	}
 
 	chirpService := &services.ChirpService{
