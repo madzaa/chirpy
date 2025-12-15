@@ -14,16 +14,18 @@ import (
 )
 
 type Chirp struct {
-	Id        uuid.UUID `json:"id"`
+	ID        uuid.UUID `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Body      string    `json:"body"`
-	UserId    uuid.UUID `json:"user_id"`
+	UserID    uuid.UUID `json:"user_id"`
 }
 
 type ChirpService struct {
 	Queries *database.Queries
 }
+
+var profanityRegex = regexp.MustCompile("(?i)(kerfuffle|sharbert|fornax)")
 
 func (s *ChirpService) Create(ctx context.Context, body string, userID uuid.UUID) (Chirp, error) {
 	if len(body) > 140 {
@@ -102,17 +104,16 @@ func (s *ChirpService) DeleteChirp(ctx context.Context, id uuid.UUID) error {
 
 func mapToChirp(createChirp database.Chirp) Chirp {
 	responseChirp := Chirp{
-		Id:        createChirp.ID,
+		ID:        createChirp.ID,
 		CreatedAt: createChirp.CreatedAt,
 		UpdatedAt: createChirp.UpdatedAt,
 		Body:      createChirp.Body,
-		UserId:    createChirp.UserID,
+		UserID:    createChirp.UserID,
 	}
 	return responseChirp
 }
 
 func (s *ChirpService) checkProfanity(chirp string) string {
-	r, _ := regexp.Compile("(?i)(kerfuffle|sharbert|fornax)")
-	out := r.ReplaceAllString(chirp, "****")
+	out := profanityRegex.ReplaceAllString(chirp, "****")
 	return out
 }

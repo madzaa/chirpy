@@ -32,6 +32,14 @@ func NewApiConfig() *ApiConfig {
 		log.Fatal(err)
 	}
 
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+
+		}
+	}(db)
+
 	dbQueries := database.New(db)
 	return &ApiConfig{Queries: dbQueries, Env: env, JWTSecret: jwtSecret, PolkaAPIKey: polkaApiKey}
+
 }

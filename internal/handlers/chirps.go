@@ -19,6 +19,8 @@ func NewChirpHandler(cfg *services.ChirpService) http.HandlerFunc {
 		chirp := services.Chirp{}
 		err := decoder.Decode(&chirp)
 		if err != nil {
+			log.Printf("unable to decode new chirp: %v", err)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
@@ -45,7 +47,7 @@ func GetChirpsByID(cfg *services.ChirpService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := uuid.Parse(r.PathValue("chirpID"))
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusBadRequest)
 			log.Printf("unable to create uuid: %v", err)
 			return
 		}
@@ -68,7 +70,7 @@ func DeleteChirpByID(cfg *services.ChirpService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := uuid.Parse(r.PathValue("chirpID"))
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusBadRequest)
 			log.Printf("unable to parse chirpID: %v", err)
 			return
 		}

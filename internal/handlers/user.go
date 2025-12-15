@@ -37,7 +37,7 @@ func NewUserHandler(cfg *services.UserService) http.HandlerFunc {
 		err := decoder.Decode(&user)
 		if err != nil {
 			log.Printf("error unmarshalling JSON: %s", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		switch r.Method {
