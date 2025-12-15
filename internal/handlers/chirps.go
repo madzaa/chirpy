@@ -8,6 +8,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"sort"
 
 	"github.com/google/uuid"
 )
@@ -86,11 +87,33 @@ func DeleteChirpByID(cfg *services.ChirpService) http.HandlerFunc {
 
 func GetChirpsHandler(cfg *services.ChirpService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		chirps, err := cfg.GetChirps(r.Context())
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			log.Printf("unable to get chirps %v", err)
-			return
+		authorID := r.URL.Query().Get("author_id")
+		sorting := r.URL.Query().Get("sort")
+		var chirps []services.Chirp
+		var err error
+		if authorID == "" {
+			chirps, err = cfg.GetChirps(r.Context())
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				log.Printf("unable to get chirps %v", err)
+				return
+			}
+		} else {
+			chirps, err = cfg.GetChirpsByUser(r.Context(), authorID)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				log.Printf("unable to get chirps %v", err)
+				return
+			}
+		}
+		if sorting == "asc" {
+			sort.Slice(chirps, func(i, j int) bool {
+				return chirps[i].CreatedAt.Before(chirps[j].CreatedAt)
+			})
+		} else {
+			sort.Slice(chirps, func(i, j int) bool {
+				return chirps[j].CreatedAt.Before(chirps[i].CreatedAt)
+			})
 		}
 		err = utils.WriteJSON(w, chirps)
 		if err != nil {

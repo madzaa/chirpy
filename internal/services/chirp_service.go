@@ -54,6 +54,23 @@ func (s *ChirpService) GetChirps(ctx context.Context) ([]Chirp, error) {
 	return responseChirps, nil
 }
 
+func (s *ChirpService) GetChirpsByUser(ctx context.Context, id string) ([]Chirp, error) {
+	userId, err := uuid.Parse(id)
+	if err != nil {
+		return nil, err
+	}
+	chirps, err := s.Queries.GetChirpsByUser(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	var responseChirps []Chirp
+	for _, chirp := range chirps {
+		responseChirps = append(responseChirps, mapToChirp(chirp))
+
+	}
+	return responseChirps, nil
+}
+
 func (s *ChirpService) GetId(ctx context.Context, id uuid.UUID) (Chirp, error) {
 	chirps, err := s.Queries.GetChirp(ctx, id)
 	if err != nil {
